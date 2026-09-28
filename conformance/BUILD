@@ -122,6 +122,7 @@ test_suite(
         "binary_test_util_test",
         "binary_wireformat_test",
         "failure_list_trie_node_test",
+        "matchers_test",
         "naming_test",
         "test_manager_test",
         "testee_test",
@@ -207,7 +208,19 @@ cc_library(
 cc_library(
     name = "test_runner",
     hdrs = ["test_runner.h"],
+    visibility = ["//src/google/protobuf:__pkg__"],
     deps = ["@abseil-cpp//absl/strings:string_view"],
+)
+
+cc_library(
+    name = "mock_test_runner",
+    testonly = True,
+    hdrs = ["mock_test_runner.h"],
+    deps = [
+        ":test_runner",
+        "@abseil-cpp//absl/strings:string_view",
+        "@googletest//:gtest",
+    ],
 )
 
 cc_library(
@@ -251,7 +264,8 @@ cc_library(
     deps = [
         ":conformance_cc_proto",
         ":failure_list_trie_node",
-        "//src/google/protobuf/stubs",
+        ":testee",
+        "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/container:btree",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@abseil-cpp//absl/container:flat_hash_set",
@@ -260,6 +274,7 @@ cc_library(
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:string_view",
+        "@abseil-cpp//absl/types:optional",
     ],
 )
 
@@ -315,7 +330,8 @@ cc_test(
     srcs = ["testee_test.cc"],
     deps = [
         ":binary_wireformat",
-        ":test_runner",
+        ":conformance_cc_proto",
+        ":mock_test_runner",
         ":testee",
         "//:test_messages_proto2_cc_proto",
         "//:test_messages_proto3_cc_proto",
@@ -334,12 +350,53 @@ cc_test(
     srcs = ["test_manager_test.cc"],
     deps = [
         ":test_manager",
+        ":testee",
         "//src/google/protobuf/testing",
         "//src/google/protobuf/testing:file",
         "@abseil-cpp//absl/log:absl_check",
         "@abseil-cpp//absl/status",
         "@abseil-cpp//absl/status:status_matchers",
         "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/types:optional",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
+    ],
+)
+
+# gMock matchers for conformance tests.
+cc_library(
+    name = "matchers",
+    testonly = 1,
+    srcs = ["matchers.cc"],
+    hdrs = ["matchers.h"],
+    deps = [
+        ":binary_wireformat",
+        ":conformance_cc_proto",
+        ":testee",
+        "//src/google/protobuf",
+        "//src/google/protobuf/util:differencer",
+        "@abseil-cpp//absl/log:absl_check",
+        "@abseil-cpp//absl/memory",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/strings:string_view",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "matchers_test",
+    srcs = ["matchers_test.cc"],
+    deps = [
+        ":binary_wireformat",
+        ":conformance_cc_proto",
+        ":matchers",
+        ":mock_test_runner",
+        ":testee",
+        "//:test_messages_proto2_cc_proto",
+        "//src/google/protobuf",
+        "@abseil-cpp//absl/log:absl_check",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/strings:string_view",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
